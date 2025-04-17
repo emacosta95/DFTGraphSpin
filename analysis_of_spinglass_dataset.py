@@ -6,10 +6,12 @@ from src.graph_utils import create_random_coupling_graph
 import numpy as np
 from typing import List,Dict
 from tqdm import trange
-from scipy.sparse.linalg import eigsh
+import cupy as cp
+from cupyx.scipy.sparse import csr_matrix as cp_csr_matrix
+from cupyx.scipy.sparse.linalg import eigsh as eigsh_cp
 from src.quantum_object_utils import get_f_operator,get_density_f,get_zz_dictionary,get_zz_matrix
 ndata=10000
-n_sites=10
+n_sites=16
 average_coupling=3
 n_levels=3
 
@@ -42,8 +44,8 @@ for i in trange(ndata):
     j_hamiltonian=SpinOperator(index=index,coupling=values,size=n_sites)
     
     tot_hamiltonian=j_hamiltonian.qutip_op+h_hamiltonian.qutip_op
-    tot_hamiltonian_sparse=tot_hamiltonian.data.as_scipy()
-    es,psis=eigsh(tot_hamiltonian_sparse,k=n_levels,which='SA')
+    tot_hamiltonian_sparse=cp_csr_matrix(tot_hamiltonian.data.as_scipy())
+    es,psis=eigsh_cp(tot_hamiltonian_sparse,k=n_levels,which='SA')
     
     zz_matrix=get_zz_matrix(zz_operators=zz_dictionary,n_sites=n_sites,psi=psis[:,0])
     f_density=get_density_f(psi=psis[:,0],f_operators=f_operators)
@@ -55,7 +57,7 @@ for i in trange(ndata):
     fs.append(f_value)
     fs_density.append(f_density)
     zz_matrices.append(zz_matrix)
-    energies.append(es)
+    energies.append(es.get())
     couplingss.append(couplings)
 
 fs=np.asarray(fs)
@@ -64,4 +66,4 @@ zz_matrices=np.asarray(zz_matrices)
 energies=np.asarray(energies)
 couplingss=np.asarray(couplingss)
 
-np.savez(f'data/datasets/dataset_for_training_ndata_{ndata}_test0',fs=fs,zz_matrices=zz_matrices,energies=energies,couplings=couplingss,fs_density=fs_density)
+np.savez(f'data/datasets/dataset_for_training_ndata_{ndata}_nsites_{n_sites}_test0',fs=fs,zz_matrices=zz_matrices,energies=energies,couplings=couplingss,fs_density=fs_density)
