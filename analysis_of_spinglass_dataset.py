@@ -10,10 +10,10 @@ import cupy as cp
 from cupyx.scipy.sparse import csr_matrix as cp_csr_matrix
 from cupyx.scipy.sparse.linalg import eigsh as eigsh_cp
 from src.quantum_object_utils import get_f_operator,get_density_f,get_zz_dictionary,get_zz_matrix
-ndata=10000
-n_sites=16
+ndata=500
+n_sites=20
 average_coupling=3
-n_levels=3
+n_levels=1
 
 h_hamiltonian=SpinOperator(index=[('x',i) for i in range(n_sites)],coupling=[1]*n_sites,size=n_sites)
 
