@@ -12,18 +12,15 @@ from cupyx.scipy.sparse.linalg import eigsh as eigsh_cp
 from src.quantum_object_utils import get_f_operator,get_density_f,get_zz_dictionary,get_zz_matrix
 
 
-mempool = cp.get_default_memory_pool()
 
-with cp.cuda.Device(0):
-    mempool.set_limit(size=1024**3)  # 1 GiB
 
 
 ndata=500
-n_sites=16
-sigma=1
+n_sites=20
+sigma=0.5
 fully_connected=True
 average_coupling=4
-n_levels=3
+n_levels=1
 
 h_hamiltonian=SpinOperator(index=[('x',i) for i in range(n_sites)],coupling=[1]*n_sites,size=n_sites)
 
@@ -44,7 +41,7 @@ for i in trange(ndata):
 
     else:
         graph=create_random_coupling_graph(num_nodes=n_sites,edge_prob=average_coupling/n_sites)
-    couplings = nx.to_numpy_array(graph, weight='weight')
+    couplings =(1/np.sqrt(n_sites))* nx.to_numpy_array(graph, weight='weight')
 
     dict_couplings={}
     index=[]
@@ -58,7 +55,7 @@ for i in trange(ndata):
 
     j_hamiltonian=SpinOperator(index=index,coupling=values,size=n_sites)
     
-    tot_hamiltonian=(1/np.sqrt(n_sites))*j_hamiltonian.qutip_op+h_hamiltonian.qutip_op
+    tot_hamiltonian=j_hamiltonian.qutip_op+h_hamiltonian.qutip_op
     tot_hamiltonian_sparse=cp_csr_matrix(tot_hamiltonian.data.as_scipy())
     es,psis=eigsh_cp(tot_hamiltonian_sparse,k=n_levels,which='SA')
     
